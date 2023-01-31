@@ -1,7 +1,7 @@
 version: "0.1"
 services:
   kbf:
-    image: chipdavis/docker-kbfoptimizer
+    image: kbfoptimizer:latest
     container_name: kbf-composed
     ports:
       - "8080:80"
