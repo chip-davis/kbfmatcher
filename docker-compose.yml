@@ -2,6 +2,6 @@ version: "0.1"
 services:
   kbf:
     image: kbfoptimizer:latest
-    container_name: kbf-composed
+    container_name: kbf
     ports:
       - "8080:80"
