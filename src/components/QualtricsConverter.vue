@@ -73,8 +73,12 @@
       <v-spacer></v-spacer>
     </v-row>
     <v-row>
+      <v-col cols="12" md="10">
+        <v-btn @click="toggleTable" class="success">Show / Hide Table</v-btn>
+      </v-col>
       <ve-table
         ref="tableRef"
+        id="table"
         fixed-header
         border-y
         :columns="columnNames"
@@ -109,14 +113,19 @@
 import Vue from "vue";
 import * as Papa from "papaparse";
 import { exampleInput, exampleOutput } from "@/data/converter-example.json";
+import { veLoading } from "vue-easytable";
 
+Vue.prototype.$veLoading = veLoading;
 export default Vue.extend({
   name: "Qualtrics",
   data() {
     return {
+      displayTable: true,
+      loadingInstance: null,
       rowStyleOption: {
         clickHighlight: false,
         hoverHighlight: false,
+        stripe: true,
       },
       cellSelectionOption: {
         // disble cell selection
@@ -191,13 +200,40 @@ export default Vue.extend({
   },
   watch: {
     csvQualtricsInput: function() {
-      this.convert();
+      this.displayTable();
+      this.loadingInstance.close();
     },
   },
   created() {
     document.title = "Kellogg CMC Job Fair Interview Optimizer";
   },
+  mounted() {
+    this.loadingInstance = this.$veLoading({
+      target: document.querySelector("#table"),
+      tip: "Waiting for CSV input...",
+      name: "bounce",
+    });
+    this.show();
+  },
   methods: {
+    show() {
+      this.loadingInstance.show();
+    },
+    close() {
+      this.loadingInstance.close();
+    },
+
+    toggleTable() {
+      // Hide table using document.getElementById("table").style.display = "none";
+      if (this.displayTable == true) {
+        document.getElementById("table").style.display = "none";
+        this.displayTable = false;
+        return;
+      }
+      document.getElementById("table").style.display = "block";
+      this.displayTable = true;
+    },
+
     __parsedQualtricsCsv() {
       return Papa.parse(this.csvQualtricsInput).data;
     },
@@ -334,6 +370,12 @@ export default Vue.extend({
       }
 
       return output;
+    },
+
+    displayTable() {
+      this.parsedQualtricsCsv = this.__parsedQualtricsCsv();
+      this.columnNames = this.__columnNames();
+      this.tableData = this.__tableData();
     },
 
     convert() {
