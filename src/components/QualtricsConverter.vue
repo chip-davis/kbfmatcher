@@ -73,31 +73,16 @@
       <v-spacer></v-spacer>
     </v-row>
     <v-row>
-      <v-spacer></v-spacer>
-      <v-col cols="6" md="5">
-        <h3>Student Identifiers</h3>
-        <h4>
-          These should be unique. If you see duplicates, edit the Qualtrics
-          output CSV to remove the duplicate students before converting here.
-        </h4>
-        <ol>
-          <li
-            v-for="(student, i) in Object.keys(studentCompaniesMap)"
-            v-bind:key="i"
-          >
-            {{ student }}
-          </li>
-        </ol>
-      </v-col>
-      <v-col cols="6" md="5">
-        <h3>Companies</h3>
-        <ol>
-          <li v-for="(company, i) in companies" v-bind:key="i">
-            {{ company }}
-          </li>
-        </ol>
-      </v-col>
-      <v-spacer></v-spacer>
+      <ve-table
+        ref="tableRef"
+        fixed-header
+        border-y
+        :columns="columnNames"
+        :table-data="tableData"
+        :rowStyleOption="rowStyleOption"
+        rowKeyFieldName="rowKey"
+        :contextmenu-body-option="contextmenuBodyOption"
+      />
     </v-row>
     <v-row>
       <v-spacer></v-spacer>
@@ -129,6 +114,71 @@ export default Vue.extend({
   name: "Qualtrics",
   data() {
     return {
+      rowStyleOption: {
+        clickHighlight: false,
+        hoverHighlight: false,
+      },
+      cellSelectionOption: {
+        // disble cell selection
+        enable: true,
+      },
+
+      // contextmenu body option
+      contextmenuBodyOption: {
+        // after menu click
+        afterMenuClick: ({
+          type,
+          selectionRangeKeys,
+          selectionRangeIndexes,
+        }) => {
+          console.log("---contextmenu body afterMenuClick HERE 2--");
+          console.log("type::", type);
+          console.log("selectionRangeKeys::", selectionRangeKeys);
+          console.log("selectionRangeIndexes::", selectionRangeIndexes);
+          const startColIndex = selectionRangeIndexes.startColIndex;
+          const startRowIndex = selectionRangeIndexes.startRowIndex + 1;
+          const cellValue = this.parsedQualtricsCsv[startRowIndex][
+            startColIndex
+          ];
+          // Call print cell value funtion
+          if (type === "first-name") {
+            console.log("first name: " + cellValue);
+          }
+          if (type === "last-name") {
+            console.log("last name: " + cellValue);
+          }
+          if (type === "first-company") {
+            console.log("first company: " + cellValue);
+          }
+          if (type === "last-company") {
+            console.log("last company: " + cellValue);
+          }
+        },
+
+        // contextmenus
+        contextmenus: [
+          {
+            type: "first-name",
+            label: "First Name",
+          },
+          {
+            type: "last-name",
+            label: "Last Name",
+          },
+          {
+            type: "SEPARATOR",
+          },
+          {
+            type: "first-company",
+            label: "First Company",
+          },
+          {
+            type: "last-company",
+            label: "Last Company",
+          },
+        ],
+      },
+      tableData: [{}],
       exampleInput: exampleInput,
       exampleOutput: exampleOutput,
       csvQualtricsInput: "",
@@ -136,6 +186,7 @@ export default Vue.extend({
       parsedQualtricsCsv: [],
       studentCompaniesMap: {},
       companies: [],
+      columnNames: [{}],
     };
   },
   watch: {
@@ -149,6 +200,45 @@ export default Vue.extend({
   methods: {
     __parsedQualtricsCsv() {
       return Papa.parse(this.csvQualtricsInput).data;
+    },
+
+    __printCellValue(cellValue) {
+      console.log(cellValue);
+    },
+
+    __columnNames() {
+      // Get column names from this.csvQualtricsInput. Save as objects
+      // with the following structure : { field: "name", key: "a", title: "Name", align: "center" },
+      // where "name" is the name of the column, "a" is the key for the column, "Name" is the title
+      // of the column, and "center" is the alignment of the column.
+      let columnNames = [];
+      let data = this.parsedQualtricsCsv;
+      for (let i = 0; i < data[0].length; i++) {
+        columnNames.push({
+          field: data[0][i],
+          key: data[0][i],
+          title: data[0][i],
+          align: "center",
+        });
+      }
+      return columnNames;
+    },
+
+    __tableData() {
+      // Convert this.parsedQualtricsCsv to a tableData object where the key is the column name and the value
+      // is the value of the cell in the column.
+      // Also include a rowKey field that is the row number.
+      let tableData = [];
+      let data = this.parsedQualtricsCsv;
+      for (let i = 1; i < data.length; i++) {
+        let row = {};
+        for (let j = 0; j < data[i].length; j++) {
+          row[data[0][j]] = data[i][j];
+        }
+        row["rowKey"] = i;
+        tableData.push(row);
+      }
+      return tableData;
     },
 
     __companies() {
@@ -248,6 +338,9 @@ export default Vue.extend({
 
     convert() {
       this.parsedQualtricsCsv = this.__parsedQualtricsCsv();
+      this.columnNames = this.__columnNames();
+      this.tableData = this.__tableData();
+      console.log(this.parsedQualtricsCsv);
       this.studentCompaniesMap = this.__studentCompaniesMap();
       this.companies = this.__companies();
       this.output = this.__rankingsMatrix();
