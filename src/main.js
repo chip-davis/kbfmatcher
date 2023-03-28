@@ -7,12 +7,14 @@ import underscore from "vue-underscore";
 import faker from "vue-faker";
 import "vue-easytable/libs/theme-default/index.css";
 import VueEasytable from "vue-easytable";
+import VueCoreVideoPlayer from "vue-core-video-player";
 
 Vue.config.productionTip = false;
 
 Vue.use(underscore);
 Vue.use(faker);
 Vue.use(VueEasytable);
+Vue.use(VueCoreVideoPlayer);
 
 Vue.filter("roundNumber", function(value, places) {
   if (!value) return "";

@@ -32,6 +32,18 @@
                     select all cells and copy them, and paste into the Qualtrics
                     Input textarea below.
                   </p>
+                  <p>
+                    After pasting the data, the loading spinner will dissapear
+                    and the table will become visible. Start by finding the cell
+                    that contains the first student identifier. Right click and
+                    choose "First Name". Then, find the cell that contains the
+                    last student identifier. Right click and choose "Last Name".
+                    Repeat this process for the first and last company
+                    identifier. Now, click convert at the bottom of the screen.
+                    After selecting the identifiers, for ease of use to click
+                    the convert button, you may want to click the show / hide
+                    table button.
+                  </p>
                 </v-col>
                 <v-spacer></v-spacer>
               </v-row>
@@ -411,6 +423,7 @@ export default Vue.extend({
           }
           row.push(ranking);
         }
+        //
 
         output.push(row);
       }
