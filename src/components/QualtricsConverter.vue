@@ -120,7 +120,7 @@ export default Vue.extend({
   name: "Qualtrics",
   data() {
     return {
-      displayTable: true,
+      showTable: true,
       loadingInstance: null,
       rowStyleOption: {
         clickHighlight: false,
@@ -140,27 +140,28 @@ export default Vue.extend({
           selectionRangeKeys,
           selectionRangeIndexes,
         }) => {
-          console.log("---contextmenu body afterMenuClick HERE 2--");
-          console.log("type::", type);
-          console.log("selectionRangeKeys::", selectionRangeKeys);
-          console.log("selectionRangeIndexes::", selectionRangeIndexes);
           const startColIndex = selectionRangeIndexes.startColIndex;
           const startRowIndex = selectionRangeIndexes.startRowIndex + 1;
           const cellValue = this.parsedQualtricsCsv[startRowIndex][
             startColIndex
           ];
           // Call print cell value funtion
-          if (type === "first-name") {
-            console.log("first name: " + cellValue);
-          }
-          if (type === "last-name") {
-            console.log("last name: " + cellValue);
-          }
-          if (type === "first-company") {
-            console.log("first company: " + cellValue);
-          }
-          if (type === "last-company") {
-            console.log("last company: " + cellValue);
+
+          switch (type) {
+            case "first-name":
+              this.pushToArray(type, [startRowIndex, startColIndex]);
+              break;
+            case "last-name":
+              this.pushToArray(type, [startRowIndex, startColIndex]);
+              break;
+            case "first-company":
+              this.pushToArray(type, [startRowIndex, startColIndex]);
+              break;
+            case "last-company":
+              this.pushToArray(type, [startRowIndex, startColIndex]);
+              break;
+            default:
+              break;
           }
         },
 
@@ -196,6 +197,10 @@ export default Vue.extend({
       studentCompaniesMap: {},
       companies: [],
       columnNames: [{}],
+      firstStudentIdentifierIndex: [],
+      lastStudentIdentifierIndex: [],
+      firstCompanyIdentifierIndex: [],
+      lastCompanyIdentifierIndex: [],
     };
   },
   watch: {
@@ -225,13 +230,32 @@ export default Vue.extend({
 
     toggleTable() {
       // Hide table using document.getElementById("table").style.display = "none";
-      if (this.displayTable == true) {
+      if (this.showTable == true) {
         document.getElementById("table").style.display = "none";
-        this.displayTable = false;
+        this.showTable = false;
         return;
       }
       document.getElementById("table").style.display = "block";
       this.displayTable = true;
+    },
+
+    pushToArray(type, indexes) {
+      switch (type) {
+        case "first-name":
+          this.firstStudentIdentifierIndex = indexes;
+          break;
+        case "last-name":
+          this.lastStudentIdentifierIndex = indexes;
+          break;
+        case "first-company":
+          this.firstCompanyIdentifierIndex = indexes;
+          break;
+        case "last-company":
+          this.lastCompanyIdentifierIndex = indexes;
+          break;
+        default:
+          break;
+      }
     },
 
     __parsedQualtricsCsv() {
@@ -283,18 +307,27 @@ export default Vue.extend({
       // The variable 'company' holds the name of the company.
       // The variable 'data' holds the CSV data.
       // The variable 'i' loops through the rows of the CSV data.
-      // 'i' starts at 2 because the first two rows are the header row.
+      // 'i' starts at the first index of the variable firstCompanyIdentifierIndex. This contains the row number of the first company.
       // The variable 'j' loops through the columns of the CSV data.
-      // 'j' Starts at 19 because the first 18 columns are not company names.
-      // The variables 'i' and 'j' will be replaced eventually with user input.
+      // 'j' starts at the second index of the variable firstCompanyIdentifierIndex. This contains the column number of the first company.
+      // 'j' Will loop through until it has reached the end of the companies which is denoted by lastCompanyIdentifierIndex[1].
 
       let data = this.parsedQualtricsCsv;
       let companies = [];
-      for (let i = 2; i < data.length; i++) {
-        for (let j = 19; j < 24; j++) {
+      for (let i = this.firstCompanyIdentifierIndex[0]; i < data.length; i++) {
+        for (
+          let j = this.firstCompanyIdentifierIndex[1];
+          j <= this.lastCompanyIdentifierIndex[1];
+          j++
+        ) {
           let company = data[i][j];
-          if (company && !companies.includes(company)) {
-            companies.push(company);
+          // First attempt to convert company to a number (from a string). If it is a number, then it is not a company. Ignore it.
+          if (isNaN(company)) {
+            // If the company is not a number, then check if it is already in the list of companies.
+            // If it is not in the list of companies, then add it to the list of companies.
+            if (company && !companies.includes(company)) {
+              companies.push(company);
+            }
           }
         }
       }
@@ -325,14 +358,26 @@ export default Vue.extend({
 
       let data = this.parsedQualtricsCsv;
       let studentCompaniesMap = {};
-      for (let i = 2; i < data.length; i++) {
-        let student_name = data[i][17] + " " + data[i][18];
+      for (let i = this.firstStudentIdentifierIndex[0]; i < data.length; i++) {
+        let student_name =
+          data[i][this.firstStudentIdentifierIndex[1]] +
+          " " +
+          data[i][this.lastStudentIdentifierIndex[1]];
         if (student_name != "undefined undefined") {
           let companies = [];
-          for (let j = 19; j < 24; j++) {
-            companies.push(data[i][j]);
+          for (
+            let j = this.firstCompanyIdentifierIndex[1];
+            j <= this.lastCompanyIdentifierIndex[1];
+            j++
+          ) {
+            if (data[i][j] != "") {
+              companies.push(data[i][j]);
+            }
           }
           studentCompaniesMap[student_name] = companies;
+          console.log(student_name, studentCompaniesMap[student_name]);
+        } else {
+          console.log("Student name is undefined, skipping");
         }
       }
       return studentCompaniesMap;
@@ -366,6 +411,7 @@ export default Vue.extend({
           }
           row.push(ranking);
         }
+
         output.push(row);
       }
 
